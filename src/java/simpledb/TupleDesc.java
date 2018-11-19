@@ -172,6 +172,9 @@ public class TupleDesc implements Serializable {
      *             if no field with a matching name is found.
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
+    	if (name == null)
+    		throw new  NoSuchElementException();
+    	
         for (int i = 0; i < fieldNum; i++) {
         	if (name.equals(item[i].fieldName))
         		return i;
@@ -237,7 +240,10 @@ public class TupleDesc implements Serializable {
         	return false;
         if (getClass() != o.getClass())
         	return false;
+        
         TupleDesc other = (TupleDesc) o;
+        if (other.numFields() != this.fieldNum)
+        	return false;
         
         for (int i = 0; i < fieldNum; i++)
         	if (this.item[i].fieldType !=
