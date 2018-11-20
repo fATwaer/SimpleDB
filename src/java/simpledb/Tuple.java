@@ -81,6 +81,8 @@ public class Tuple implements Serializable {
     public void setField(int i, Field f) {
     	if (i > numFields) 
     		return;
+    	if (tupleDescriptor.getFieldType(i) != f.getType())
+    		return;
         fields[i] = f; 
     }
 
@@ -129,7 +131,7 @@ public class Tuple implements Serializable {
      * */
     public void resetTupleDesc(TupleDesc td)
     {
-        td = null;
+        tupleDescriptor = td;
     }
     
     

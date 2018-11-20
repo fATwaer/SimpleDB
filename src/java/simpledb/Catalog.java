@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import simpledb.TestUtil.SkeletonFile;
+
 /**
  * The Catalog keeps track of all available tables in the database and their
  * associated schemas.
@@ -18,12 +20,36 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 
+	private static int id; // unique identifier
+	ArrayList<Tables> tables;
+	
+	// a set of information about a table
+	private class Tables {
+		public String tableName;
+		public final DbFile file;
+		public final String primaryField;
+		public final int index;
+		public boolean dupName;
+		
+		{
+			dupName = false;
+		}
+		
+		Tables(DbFile file, String name, String pf, int i) {
+			this.tableName = name;
+			this.file = file;
+			this.primaryField = pf;
+			this.index = i;
+		
+		}
+	}
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
     public Catalog() {
-        // some code goes here
+        id = 0;
+    	tables = new ArrayList<>();
     }
 
     /**
@@ -36,7 +62,34 @@ public class Catalog {
      * @param pkeyField the name of the primary key field
      */
     public void addTable(DbFile file, String name, String pkeyField) {
-        // some code goes here
+        
+    	int NameConflict = 0;
+    	int length = 0;
+    	Tables cf = null;
+    	
+    	if (name == null)
+        	name = "NULL";
+    	//System.out.println(file.);
+        for (Tables t: tables) 
+        {
+        	length = t.tableName.length() < name.length() ? t.tableName.length() : name.length();
+        	if (t.tableName.subSequence(0, length).equals(name)) {
+        		NameConflict++;
+        		if (!t.dupName)
+        			cf = t;
+        	}
+        }
+        
+        if (cf != null) 
+        {
+        	cf.dupName = true;
+        	cf.tableName += String.format("#%d", NameConflict);
+        }
+        
+        
+        tables.add(new Tables(file, name, pkeyField, id));
+        id++;
+    	
     }
 
     public void addTable(DbFile file, String name) {
@@ -59,8 +112,11 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public int getTableId(String name) throws NoSuchElementException {
-        // some code goes here
-        return 0;
+        for (Tables t: tables)
+        	if (t.tableName.equals(name))
+        		return t.file.getId();
+        
+        throw new NoSuchElementException();
     }
 
     /**
@@ -70,8 +126,10 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
-        // some code goes here
-        return null;
+    	for (Tables t: tables)
+        	if (t.file.getId() == tableid)
+        		return t.file.getTupleDesc();
+    	throw new NoSuchElementException();
     }
 
     /**
@@ -81,13 +139,17 @@ public class Catalog {
      *     function passed to addTable
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
-        // some code goes here
-        return null;
+    	for (Tables t: tables)
+        	if (t.file.getId() == tableid)
+        		return t.file;
+        throw new NoSuchElementException();
     }
 
     public String getPrimaryKey(int tableid) {
-        // some code goes here
-        return null;
+    	for (Tables t: tables)
+        	if (t.file.getId() == tableid)
+        		return t.primaryField;
+        throw new NoSuchElementException();
     }
 
     public Iterator<Integer> tableIdIterator() {
@@ -96,13 +158,17 @@ public class Catalog {
     }
 
     public String getTableName(int id) {
-        // some code goes here
-        return null;
+    	for (Tables t: tables)
+        	if (t.file.getId() == id)
+        		return t.tableName;
+        throw new NoSuchElementException();
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+    	tables.clear();
+    	id = 0; //?
     }
     
     /**
@@ -158,6 +224,24 @@ public class Catalog {
             System.out.println ("Invalid catalog entry : " + line);
             System.exit(0);
         }
+    }
+    
+    public static void main(String[] args) {
+    	DbFile f = new SkeletonFile(0, Utility.getTupleDesc(2));
+    	DbFile f1 = new SkeletonFile(0, Utility.getTupleDesc(2));
+//    	DbFile f2 = new SkeletonFile(2, Utility.getTupleDesc(2));
+//    	
+    	
+    	System.out.println(f.getId());
+    	System.out.println(f1.getId());
+    	
+    	Database.getCatalog().addTable(f, "name");
+    	Database.getCatalog().addTable(f1, "name5");
+    	
+//    	Database.getCatalog().addTable(f2, "name");
+//    	
+    	System.out.println(Database.getCatalog().getTableName(0));
+    	System.out.println(Database.getCatalog().getTableName(0));
     }
 }
 
