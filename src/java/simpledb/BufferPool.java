@@ -21,6 +21,9 @@ public class BufferPool {
 
     private static int pageSize = DEFAULT_PAGE_SIZE;
     
+    /** hold pages */
+    private Page[] pages;
+    
     /** Default number of pages passed to the constructor. This is used by
     other classes. BufferPool should use the numPages argument to the
     constructor instead. */
@@ -32,7 +35,7 @@ public class BufferPool {
      * @param numPages maximum number of pages in this buffer pool.
      */
     public BufferPool(int numPages) {
-        // some code goes here
+    	pages = new Page[numPages];
     }
     
     public static int getPageSize() {
@@ -67,6 +70,39 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
+    	
+    	//////////////////////
+    	// lock TODO
+    	//////////////////////
+
+    	
+    	for (int i = 0; i < pages.length; i++) {
+    		if (pages[i] == null)
+    			continue;
+    		if (pages[i].equals(pid))
+    			return pages[i];
+    	}
+    	
+    	/** read file from disk */
+    	DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+    	Page newPage = file.readPage(pid);
+    	
+    	for (int i = 0; i < pages.length; i++) {
+    		if (pages[i] != null)
+    			continue;
+    		pages[i] = newPage;
+    		return pages[i];
+    	}
+    	
+    	/** there aren't not enough space to add new page */
+    	/** execute eviction policy */
+    	// TODO n
+    	
+    	
+		//////////////////////
+		// unlock TODO
+		//////////////////////
+    	
         return null;
     }
 

@@ -21,7 +21,7 @@ import simpledb.TestUtil.SkeletonFile;
 public class Catalog {
 
 	private static int id; // unique identifier
-	ArrayList<Tables> tables;
+	private ArrayList<Tables> tables;
 	
 	// a set of information about a table
 	private class Tables {
