@@ -14,7 +14,9 @@ import java.util.*;
  * @author Sam Madden
  */
 public class HeapFile implements DbFile {
-
+	
+	private File diskfile;
+	private TupleDesc td;
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -24,6 +26,8 @@ public class HeapFile implements DbFile {
      */
     public HeapFile(File f, TupleDesc td) {
         // some code goes here
+    	diskfile = f;
+    	this.td = td;
     }
 
     /**
@@ -33,7 +37,7 @@ public class HeapFile implements DbFile {
      */
     public File getFile() {
         // some code goes here
-        return null;
+        return diskfile;
     }
 
     /**
@@ -47,7 +51,7 @@ public class HeapFile implements DbFile {
      */
     public int getId() {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+    	return diskfile.getAbsoluteFile().hashCode();
     }
 
     /**
@@ -57,13 +61,32 @@ public class HeapFile implements DbFile {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        throw new UnsupportedOperationException("implement this");
+        return this.td;
     }
 
     // see DbFile.java for javadocs
     public Page readPage(PageId pid) {
         // some code goes here
-        return null;
+    	int pgsz = BufferPool.getPageSize(); 
+    	byte[] bytes = new byte[pgsz];
+    	
+    	int pgNo = pid.getPageNumber();
+    	int off = pgNo * BufferPool.getPageSize();
+    	HeapPage heapPage = null;
+    	
+    	try (RandomAccessFile raf = new RandomAccessFile(diskfile, "r")){
+			 
+			raf.read(bytes , off, pgsz);
+			heapPage =  new HeapPage(new HeapPageId(pid.getTableId(), pgNo), bytes);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    	
+    	
+        return heapPage;
     }
 
     // see DbFile.java for javadocs
@@ -76,8 +99,16 @@ public class HeapFile implements DbFile {
      * Returns the number of pages in this HeapFile.
      */
     public int numPages() {
-        // some code goes here
-        return 0;
+    	long filesize = diskfile.length();
+    	
+    	
+    	long pagenum = filesize / BufferPool.getPageSize();
+    	// Roundup
+    	if (pagenum * BufferPool.getPageSize() < filesize)
+    		pagenum++;
+    	
+    	/** !!! cast (long -> int) here*/
+        return (int)pagenum;
     }
 
     // see DbFile.java for javadocs
@@ -98,9 +129,99 @@ public class HeapFile implements DbFile {
 
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
-        // some code goes here
-        return null;
+    	
+    	
+        return new Itr(tid);
     }
+    
+    private class Itr implements DbFileIterator {
+    	
+    	TransactionId tid;
+    	RandomAccessFile raf;
+    	HeapPage curPage;
+    	int pgNo, npages, pgsz;
+    	byte[] data;
+    	Iterator<Tuple> itr;
+    	
+    	Itr(TransactionId id) {
+    		this.tid = id;
+    		this.pgNo = 0;
+    		this.curPage = null;
+    		this.pgsz = BufferPool.getPageSize();
+    		this.data = new byte[pgsz];
+    		this.itr = null;
+    		npages = numPages();
+    	}
+    	
+		@Override
+		public void open() throws DbException, TransactionAbortedException {
+			// TODO Auto-generated method stub
+			try {
+				raf = new RandomAccessFile(diskfile, "r");
+				raf.read(data, pgNo*pgsz, pgsz);
+				curPage = new HeapPage(new HeapPageId(getId(), pgNo), data);
+				
+				if (curPage == null)
+					return;
+				itr = curPage.iterator();
+				
+			} catch (FileNotFoundException e) {
+				throw new DbException("file not found");
+			} catch (IOException e) {
+				throw new DbException("iterator read page from disk error");
+			}
+		}
 
+		@Override
+		public boolean hasNext() throws DbException, TransactionAbortedException {
+			
+			if ((pgNo + 1) > npages)
+				return false;
+			if (itr == null)
+				return false;
+			if (itr.hasNext())
+				return true;
+			if ((pgNo + 1) == npages)
+				return false;
+			/** current page has been iterated absolutely     */
+			/** just read the later page (here pgNo < npages) */
+			pgNo++;
+			try {
+				raf.read(data, pgNo*pgsz, pgsz);
+				curPage = new HeapPage(new HeapPageId(getId(), pgNo), data);
+				itr = curPage.iterator();
+			} catch (IOException e) {
+				throw new DbException("iterator read page from disk error");
+			}
+			
+			return itr.hasNext();
+		}
+
+		@Override
+		public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+			if (raf == null || itr == null)
+				throw new NoSuchElementException();
+				
+			return itr.next();
+		}
+		
+		@Override
+		public void rewind() throws DbException, TransactionAbortedException {
+			pgNo = 0;
+			open();
+			
+		}
+
+		@Override
+		public void close() {
+			try {
+				raf.close();
+				itr = null;
+			} catch (IOException e) {
+				throw new NoSuchElementException();
+			}
+		}
+    	
+    }
 }
 
