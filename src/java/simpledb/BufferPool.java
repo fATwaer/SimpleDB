@@ -69,39 +69,37 @@ public class BufferPool {
      */
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
-        // some code goes here
     	
-    	//////////////////////
-    	// lock TODO
-    	//////////////////////
-
+    	/** aquire a lock to lock bufferpool */
     	
     	for (int i = 0; i < pages.length; i++) {
     		if (pages[i] == null)
     			continue;
-    		if (pages[i].equals(pid))
+    		if (pages[i].getId().equals(pid))
     			return pages[i];
     	}
     	
-    	/** read file from disk */
-    	DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
-    	Page newPage = file.readPage(pid);
-    	
-    	for (int i = 0; i < pages.length; i++) {
-    		if (pages[i] != null)
-    			continue;
-    		pages[i] = newPage;
-    		return pages[i];
+    	if (perm == Permissions.READ_ONLY) {
+			/** read file from disk */
+			DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+			Page newPage = file.readPage(pid);
+			
+			for (int i = 0; i < pages.length; i++) {
+				if (pages[i] != null)
+					continue;
+				pages[i] = newPage;
+				return pages[i];
+			}
+    	} else if (perm == Permissions.READ_WRITE) {
+    		// TODO
     	}
     	
     	/** there aren't not enough space to add new page */
     	/** execute eviction policy */
-    	// TODO n
+    	// TODO eviction policy
     	
-    	
-		//////////////////////
-		// unlock TODO
-		//////////////////////
+    	/** operation here has done, unlock the bufferpool*/
+		// TODO unlock
     	
         return null;
     }

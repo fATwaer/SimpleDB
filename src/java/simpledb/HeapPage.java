@@ -324,10 +324,16 @@ public class HeapPage implements Page {
     }
     
     class Itr implements Iterator<Tuple>{
-    	int cur = 0;
+    	int cur;
+    	int maxcur;
+    	public Itr() {
+    		cur = 0;
+    		maxcur = numSlots;
+    	}
 		@Override
 		public boolean hasNext() {
-			// TODO Auto-generated method stub
+			if (cur >= maxcur)
+				return false;
 			if ((header[cur/8] &  1 << (cur % 8)) != 0)
 				return true;
 			return false;

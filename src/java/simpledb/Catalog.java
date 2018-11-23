@@ -29,8 +29,8 @@ public class Catalog {
 		public final DbFile file;
 		public final String primaryField;
 		public final int index;
+		public int tableid;
 		public boolean dupName;
-		
 		{
 			dupName = false;
 		}
@@ -40,7 +40,7 @@ public class Catalog {
 			this.file = file;
 			this.primaryField = pf;
 			this.index = i;
-		
+			this.tableid = file.getId();
 		}
 	}
     /**
@@ -66,10 +66,10 @@ public class Catalog {
     	int NameConflict = 0;
     	int length = 0;
     	Tables cf = null;
-    	
+    	Random r = new Random();
     	if (name == null)
         	name = "NULL";
-    	//System.out.println(file.);
+    	
         for (Tables t: tables) 
         {
         	length = t.tableName.length() < name.length() ? t.tableName.length() : name.length();
@@ -78,7 +78,21 @@ public class Catalog {
         		if (!t.dupName)
         			cf = t;
         	}
+        	
+        	if (t.tableid == file.getId())
+        	{
+        		t.tableid = r.nextInt();
+        		for (int i = 0; i < tables.size(); i++) {
+        			if (!tables.get(i).equals(t) 
+        			&& tables.get(i).tableid == t.tableid)
+        			{
+        				i = 0;
+        				t.tableid = r.nextInt();
+        			}
+        		}
+        	}
         }
+        
         
         if (cf != null) 
         {
@@ -140,14 +154,15 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
     	for (Tables t: tables)
-        	if (t.file.getId() == tableid)
+        	if (t.tableid == tableid)
         		return t.file;
         throw new NoSuchElementException();
     }
 
     public String getPrimaryKey(int tableid) {
     	for (Tables t: tables)
-        	if (t.file.getId() == tableid)
+    		//if (t.file.getId() == tableid)
+        	if (t.tableid == tableid)
         		return t.primaryField;
         throw new NoSuchElementException();
     }
@@ -159,7 +174,7 @@ public class Catalog {
 
     public String getTableName(int id) {
     	for (Tables t: tables)
-        	if (t.file.getId() == id)
+        	if (t.tableid == id)
         		return t.tableName;
         throw new NoSuchElementException();
     }
@@ -236,7 +251,7 @@ public class Catalog {
     	System.out.println(f1.getId());
     	
     	Database.getCatalog().addTable(f, "name");
-    	Database.getCatalog().addTable(f1, "name5");
+    	Database.getCatalog().addTable(f1, "name2");
     	
 //    	Database.getCatalog().addTable(f2, "name");
 //    	
