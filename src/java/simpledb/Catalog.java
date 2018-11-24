@@ -5,9 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
-import simpledb.TestUtil.SkeletonFile;
 
 /**
  * The Catalog keeps track of all available tables in the database and their
@@ -241,22 +239,22 @@ public class Catalog {
         }
     }
     
-    public static void main(String[] args) {
-    	DbFile f = new SkeletonFile(0, Utility.getTupleDesc(2));
-    	DbFile f1 = new SkeletonFile(0, Utility.getTupleDesc(2));
-//    	DbFile f2 = new SkeletonFile(2, Utility.getTupleDesc(2));
+//    public static void main(String[] args) {
+//    	DbFile f = new SkeletonFile(0, Utility.getTupleDesc(2));
+//    	DbFile f1 = new SkeletonFile(0, Utility.getTupleDesc(2));
+////    	DbFile f2 = new SkeletonFile(2, Utility.getTupleDesc(2));
+////    	
 //    	
-    	
-    	System.out.println(f.getId());
-    	System.out.println(f1.getId());
-    	
-    	Database.getCatalog().addTable(f, "name");
-    	Database.getCatalog().addTable(f1, "name2");
-    	
-//    	Database.getCatalog().addTable(f2, "name");
+//    	System.out.println(f.getId());
+//    	System.out.println(f1.getId());
 //    	
-    	System.out.println(Database.getCatalog().getTableName(0));
-    	System.out.println(Database.getCatalog().getTableName(0));
-    }
+//    	Database.getCatalog().addTable(f, "name");
+//    	Database.getCatalog().addTable(f1, "name2");
+//    	
+////    	Database.getCatalog().addTable(f2, "name");
+////    	
+//    	System.out.println(Database.getCatalog().getTableName(0));
+//    	System.out.println(Database.getCatalog().getTableName(0));
+//    }
 }
 
