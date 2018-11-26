@@ -122,8 +122,26 @@ public class Tuple implements Serializable {
      * */
     public Iterator<Field> fields()
     {
-        // some code goes here
-        return null;
+        return new Itr();
+    }
+    
+    private class Itr implements Iterator<Field>{
+    	int i;
+    	Itr() {
+    		i = 0;
+    	}
+    	
+		@Override
+		public boolean hasNext() {
+			if (i >= numFields)
+				return false;
+			return true;
+		}
+		@Override
+		public Field next() {
+			return fields[i++];
+		}
+    	
     }
 
     /**

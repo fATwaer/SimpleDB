@@ -60,6 +60,7 @@ public abstract class Operator implements OpIterator {
 
     public void open() throws DbException, TransactionAbortedException {
         this.open = true;
+        System.out.println("open2");
     }
 
     /**

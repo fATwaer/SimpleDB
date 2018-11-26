@@ -9,6 +9,11 @@ public class Filter extends Operator {
 
     private static final long serialVersionUID = 1L;
 
+    
+    private Predicate p;
+    private OpIterator ch;
+    private ArrayList<Tuple> tpp; // tuples pass the predication
+    private ArrayList<OpIterator> itrs;
     /**
      * Constructor accepts a predicate to apply and a child operator to read
      * tuples to filter from.
@@ -19,32 +24,35 @@ public class Filter extends Operator {
      *            The child operator
      */
     public Filter(Predicate p, OpIterator child) {
-        // some code goes here
+        this.p = p;
+        ch = child;
     }
 
     public Predicate getPredicate() {
-        // some code goes here
-        return null;
+        return p;
     }
 
     public TupleDesc getTupleDesc() {
-        // some code goes here
-        return null;
+        return ch.getTupleDesc();
     }
 
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
-        // some code goes here
+    	ch.open();
+    	this.open = true;
     }
 
     public void close() {
-        // some code goes here
+        ch.close();
+        open = false;
+        next = null;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
-        // some code goes here
+        ch.rewind();
     }
-
+    private boolean open; 
+    private Tuple next;
     /**
      * AbstractDbIterator.readNext implementation. Iterates over tuples from the
      * child operator, applying the predicate to them and returning those that
@@ -56,19 +64,49 @@ public class Filter extends Operator {
      */
     protected Tuple fetchNext() throws NoSuchElementException,
             TransactionAbortedException, DbException {
-        // some code goes here
-        return null;
+    	Tuple t;
+    	while (ch.hasNext()) {
+    		t = ch.next();
+    		if (p.filter(t))
+    		{
+    			next = t;
+    			return next;
+    		}
+    	}
+    	return null;
+    }
+    
+    public boolean hasNext() throws DbException, TransactionAbortedException {
+    	if (this.open != true)
+    		throw new DbException("not open");
+    	if (next == null)
+    		fetchNext();
+    	return next != null;
     }
 
+    public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+    	if (next == null) {
+    		fetchNext();
+    		if (next == null)
+    			throw new NoSuchElementException();
+    	}
+    	Tuple result = next;
+    	next = null;
+    	return result;
+    }
+    
+    
+    // I don't know whether the implementation of following methods is right   
     @Override
     public OpIterator[] getChildren() {
-        // some code goes here
-        return null;
+        return (OpIterator[]) itrs.toArray();
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
-        // some code goes here
+        
+        itrs = (ArrayList<OpIterator>) Arrays.asList(children); 
+        
     }
 
 }

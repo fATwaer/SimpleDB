@@ -40,6 +40,7 @@ public class FilterTest extends SimpleDbTestBase {
     Predicate pred = new Predicate(0, Predicate.Op.EQUALS, TestUtil.getField(0));
     Filter op = new Filter(pred, scan);
     op.open();
+    
     assertTrue(op.hasNext());
     assertNotNull(op.next());
     assertTrue(TestUtil.checkExhausted(op));
