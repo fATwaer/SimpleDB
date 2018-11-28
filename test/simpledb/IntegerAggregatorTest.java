@@ -40,6 +40,7 @@ public class IntegerAggregatorTest extends SimpleDbTestBase {
       { 1, 12 },
       { 1, 12, 3, 2 }
     };
+    
 
     this.min = new int[][] {
       { 1, 2 },

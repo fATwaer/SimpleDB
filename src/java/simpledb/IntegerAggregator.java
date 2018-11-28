@@ -1,5 +1,8 @@
 package simpledb;
 
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
+
 /**
  * Knows how to compute some aggregate over a set of IntFields.
  */
@@ -7,6 +10,16 @@ public class IntegerAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
 
+    
+    private int gbfield;
+    private Type type;
+    private int afield;
+    private Op op;
+    private ArrayList<Tuple> list;
+    
+    // for calculate the average
+    private ArrayList<Integer> avg; 
+    
     /**
      * Aggregate constructor
      * 
@@ -23,7 +36,12 @@ public class IntegerAggregator implements Aggregator {
      */
 
     public IntegerAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
-        // some code goes here
+    	this.gbfield = gbfield;
+    	this.type = gbfieldtype;
+    	this.afield = afield;
+    	this.op = what;
+    	list = new ArrayList<Tuple>();
+    	avg = new ArrayList<Integer>();
     }
 
     /**
@@ -33,8 +51,58 @@ public class IntegerAggregator implements Aggregator {
      * @param tup
      *            the Tuple containing an aggregate field and a group-by field
      */
+    String[] name = null;
+    Type[] types = null;
     public void mergeTupleIntoGroup(Tuple tup) {
-        // some code goes here
+       for (Tuple t : list) {
+    	   if (!t.getField(gbfield).equals(tup.getField(gbfield)))
+    		   continue;
+    	   
+    	   int newval = ((IntField)tup.getField(afield)).getValue();
+    	   int oldval = (((IntField)t.getField(afield)).getValue());
+    	   
+    	   switch (op) {
+    	   		case AVG:
+    	   			if (avg.size() == 0)
+    	   				avg.add(oldval);
+    	   			avg.add(newval);
+    	   			int sum = 0;
+    	   			for (int i : avg)
+    	   				sum += i;
+    	   			t.setField(1, new IntField(sum / avg.size()));
+    	   			break;
+    	   		case MAX:
+    	   			t.setField(1, new IntField(newval > oldval ? newval: oldval));
+    	   			break;
+    	   		case MIN:
+    	   			t.setField(1, new IntField(newval < oldval ? newval: oldval));
+    	   			break;
+    	   		case COUNT:
+    	   			t.setField(1, new IntField(oldval+1));
+    	   			break;
+    	   		case SUM:
+    	   			t.setField(1, new IntField(oldval+newval));
+    	   			break;
+    	   }
+    	   return;
+       }
+       if (name == null || types == null) {
+    	   name = new String[] {
+    		   tup.getTupleDesc().getFieldName(gbfield),
+    		   tup.getTupleDesc().getFieldName(afield)
+    	   };
+    	   types = new Type[] {
+    	       tup.getTupleDesc().getFieldType(gbfield),
+    	       tup.getTupleDesc().getFieldType(afield)
+    	   };
+       }
+       Tuple t = new Tuple(new TupleDesc(types, name));
+       t.setField(0, tup.getField(gbfield));
+       if (op != Op.COUNT)
+    	   t.setField(1, tup.getField(afield));
+       else
+    	   t.setField(1, new IntField(1));
+       list.add(t);
     }
 
     /**
@@ -46,9 +114,51 @@ public class IntegerAggregator implements Aggregator {
      *         the constructor.
      */
     public OpIterator iterator() {
-        // some code goes here
-        throw new
-        UnsupportedOperationException("please implement me for lab2");
+		return new Itr();
+    }
+    
+    public class Itr implements OpIterator {
+
+    	private boolean open;
+    	private int index;
+    	
+		@Override
+		public void open() throws DbException, TransactionAbortedException {
+			this.open = true;
+			index = 0;
+		}
+
+		@Override
+		public boolean hasNext() throws DbException, TransactionAbortedException {
+			
+			if (index >= list.size())
+				return false;
+			return true;
+		}
+
+		@Override
+		public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+			if (!hasNext())
+				throw new NoSuchElementException();
+			return list.get(index++);
+		}
+
+		@Override
+		public void rewind() throws DbException, TransactionAbortedException {
+			index = 0;
+			
+		}
+
+		@Override
+		public TupleDesc getTupleDesc() {
+			return list.get(0).getTupleDesc();
+		}
+
+		@Override
+		public void close() {
+			this.open = false;
+		}
+    	
     }
 
 }

@@ -32,21 +32,13 @@ public class Tuple implements Serializable {
         	return;
     	tupleDescriptor = td;
     	fields = new Field[numFields];
-//    	for (int i = 0; i < numFields; i++) {
-//    		if (td.getFieldType(i) == Type.INT_TYPE)
-//    			;
-//    		else if (td.getFieldType(i) == Type.STRING_TYPE)
-//    			;
-//    		else 
-//    			fields[i] = null;
-    	}
+    }
     
 
     /**
      * @return The TupleDesc representing the schema of this tuple.
      */
     public TupleDesc getTupleDesc() {
-        // some code goes here
         return tupleDescriptor;
     }
 
@@ -55,7 +47,6 @@ public class Tuple implements Serializable {
      *         be null.
      */
     public RecordId getRecordId() {
-        // some code goes here
         return rid;
     }
 
@@ -66,7 +57,6 @@ public class Tuple implements Serializable {
      *            the new RecordId for this tuple.
      */
     public void setRecordId(RecordId rid) {
-        // some code goes here
     	this.rid = rid;
     }
 
