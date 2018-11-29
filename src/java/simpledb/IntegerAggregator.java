@@ -16,7 +16,7 @@ public class IntegerAggregator implements Aggregator {
     private int afield;
     private Op op;
     private ArrayList<Tuple> list;
-    
+    private boolean noGrouping;
     // for calculate the average
     private ArrayList<Integer> avg; 
     
@@ -42,6 +42,7 @@ public class IntegerAggregator implements Aggregator {
     	this.op = what;
     	list = new ArrayList<Tuple>();
     	avg = new ArrayList<Integer>();
+    	this.noGrouping = (gbfield == Aggregator.NO_GROUPING ? true : false);
     }
 
     /**
@@ -55,11 +56,12 @@ public class IntegerAggregator implements Aggregator {
     Type[] types = null;
     public void mergeTupleIntoGroup(Tuple tup) {
        for (Tuple t : list) {
-    	   if (!t.getField(gbfield).equals(tup.getField(gbfield)))
+    	   if (!noGrouping && !t.getField(gbfield).equals(tup.getField(gbfield)))
     		   continue;
     	   
     	   int newval = ((IntField)tup.getField(afield)).getValue();
-    	   int oldval = (((IntField)t.getField(afield)).getValue());
+    	   int oldval = (((IntField)t.getField(noGrouping?0:1)).getValue());
+    	   IntField field = null;
     	   
     	   switch (op) {
     	   		case AVG:
@@ -69,24 +71,30 @@ public class IntegerAggregator implements Aggregator {
     	   			int sum = 0;
     	   			for (int i : avg)
     	   				sum += i;
-    	   			t.setField(1, new IntField(sum / avg.size()));
+    	   			field = new IntField(sum / avg.size());
     	   			break;
     	   		case MAX:
-    	   			t.setField(1, new IntField(newval > oldval ? newval: oldval));
+    	   			field =  new IntField(newval > oldval ? newval: oldval);
     	   			break;
     	   		case MIN:
-    	   			t.setField(1, new IntField(newval < oldval ? newval: oldval));
+    	   			field =  new IntField(newval < oldval ? newval: oldval);
     	   			break;
     	   		case COUNT:
-    	   			t.setField(1, new IntField(oldval+1));
+    	   			field = new IntField(oldval+1);
     	   			break;
     	   		case SUM:
-    	   			t.setField(1, new IntField(oldval+newval));
+    	   			field = new IntField(oldval+newval);
     	   			break;
     	   }
+    	   
+    	   t.setField(noGrouping?0:1, field);
     	   return;
        }
-       if (name == null || types == null) {
+       if (this.noGrouping && 
+    		   (name == null || types == null)) {
+    	   name = new String[] {tup.getTupleDesc().getFieldName(afield)};
+    	   types = new Type[] {tup.getTupleDesc().getFieldType(afield)};
+       } else if (name == null || types == null) {
     	   name = new String[] {
     		   tup.getTupleDesc().getFieldName(gbfield),
     		   tup.getTupleDesc().getFieldName(afield)
@@ -96,12 +104,13 @@ public class IntegerAggregator implements Aggregator {
     	       tup.getTupleDesc().getFieldType(afield)
     	   };
        }
+       
        Tuple t = new Tuple(new TupleDesc(types, name));
-       t.setField(0, tup.getField(gbfield));
-       if (op != Op.COUNT)
-    	   t.setField(1, tup.getField(afield));
-       else
-    	   t.setField(1, new IntField(1));
+       if (!noGrouping)
+    	   t.setField(0, tup.getField(gbfield));
+       t.setField(noGrouping ? 0:1, 
+    		   op == Op.COUNT ? new IntField(1):tup.getField(afield));
+       
        list.add(t);
     }
 
@@ -146,7 +155,6 @@ public class IntegerAggregator implements Aggregator {
 		@Override
 		public void rewind() throws DbException, TransactionAbortedException {
 			index = 0;
-			
 		}
 
 		@Override
