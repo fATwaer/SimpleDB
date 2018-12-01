@@ -18,7 +18,7 @@ public class IntegerAggregator implements Aggregator {
     private ArrayList<Tuple> list;
     private boolean noGrouping;
     // for calculate the average
-    private ArrayList<Integer> avg; 
+    private ArrayList<ArrayList<Integer>> avglist; 
     
     /**
      * Aggregate constructor
@@ -41,7 +41,7 @@ public class IntegerAggregator implements Aggregator {
     	this.afield = afield;
     	this.op = what;
     	list = new ArrayList<Tuple>();
-    	avg = new ArrayList<Integer>();
+    	avglist = new ArrayList<ArrayList<Integer>>();
     	this.noGrouping = (gbfield == Aggregator.NO_GROUPING ? true : false);
     }
 
@@ -55,23 +55,23 @@ public class IntegerAggregator implements Aggregator {
     String[] name = null;
     Type[] types = null;
     public void mergeTupleIntoGroup(Tuple tup) {
-       for (Tuple t : list) {
-    	   if (!noGrouping && !t.getField(gbfield).equals(tup.getField(gbfield)))
+       for (int i =  0; i < list.size(); i++) {
+    	   if (!noGrouping && !list.get(i).getField(gbfield).equals(tup.getField(gbfield)))
     		   continue;
     	   
     	   int newval = ((IntField)tup.getField(afield)).getValue();
-    	   int oldval = (((IntField)t.getField(noGrouping?0:1)).getValue());
+    	   int oldval = (((IntField)list.get(i).getField(noGrouping?0:1)).getValue());
     	   IntField field = null;
     	   
     	   switch (op) {
     	   		case AVG:
-    	   			if (avg.size() == 0)
-    	   				avg.add(oldval);
-    	   			avg.add(newval);
+    	   			if (avglist.get(i).size() == 0)
+    	   				avglist.get(i).add(oldval);
+    	   			avglist.get(i).add(newval);
     	   			int sum = 0;
-    	   			for (int i : avg)
-    	   				sum += i;
-    	   			field = new IntField(sum / avg.size());
+    	   			for (int j : avglist.get(i))
+    	   				sum += j;
+    	   			field = new IntField(sum / avglist.get(i).size());
     	   			break;
     	   		case MAX:
     	   			field =  new IntField(newval > oldval ? newval: oldval);
@@ -87,7 +87,7 @@ public class IntegerAggregator implements Aggregator {
     	   			break;
     	   }
     	   
-    	   t.setField(noGrouping?0:1, field);
+    	   list.get(i).setField(noGrouping?0:1, field);
     	   return;
        }
        if (this.noGrouping && 
@@ -110,6 +110,8 @@ public class IntegerAggregator implements Aggregator {
     	   t.setField(0, tup.getField(gbfield));
        t.setField(noGrouping ? 0:1, 
     		   op == Op.COUNT ? new IntField(1):tup.getField(afield));
+       if (op == Op.AVG)
+    	   avglist.add(new ArrayList<Integer>());
        
        list.add(t);
     }

@@ -167,7 +167,6 @@ public class Aggregate extends Operator {
     public TupleDesc getTupleDesc() {
     	String[] name;
     	Type[] types;
-    	System.out.println(gf);
     	if (gf == -1)
     	{
 
