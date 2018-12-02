@@ -143,6 +143,17 @@ public class Tuple implements Serializable {
     }
     
     
+    public boolean equals(Object obj) {
+        if (this == obj)
+        	return true;
+        if (obj == null)
+        	return false;
+        if (getClass() != obj.getClass())
+        	return false;
+        Tuple other = (Tuple) obj;
+        return this.rid.equals(other.getRecordId()) ;
+    }
+    
     public static void main(String[] args) {
         Type types[] = new Type[]{ Type.INT_TYPE, Type.INT_TYPE};
         String names[] = new String[]{ "field0", "field1" };

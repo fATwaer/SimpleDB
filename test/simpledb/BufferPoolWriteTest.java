@@ -88,6 +88,7 @@ public class BufferPoolWriteTest extends TestUtil.CreateHeapFile {
 
     	// heap file should have ~10 pages
     	HeapFile hf = SystemTestUtil.createRandomHeapFile(2, 504*10, null, null);
+    	
     	DbFileIterator it = hf.iterator(tid); 
     	it.open();
     	

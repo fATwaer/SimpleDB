@@ -27,6 +27,7 @@ public class HeapFile implements DbFile {
     public HeapFile(File f, TupleDesc td) {
     	diskfile = f;
     	this.td = td;
+    	newpage = 0;
     }
 
     /**
@@ -95,10 +96,11 @@ public class HeapFile implements DbFile {
         // not necessary for lab1
     }
 
+    int newpage;
     /**
      * Returns the number of pages in this HeapFile.
      */
-    public int numPages() {
+    public int numPages() {	
     	long filesize = diskfile.length();
     	long pagenum = filesize / BufferPool.getPageSize();
     	// Roundup
@@ -106,23 +108,49 @@ public class HeapFile implements DbFile {
     		pagenum++;
     	
     	/** !!! cast (long -> int) here*/
-        return (int)pagenum;
+        return newpage + (int)pagenum;
     }
 
     // see DbFile.java for javadocs
     public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        return null;
-        // not necessary for lab1
+    		for (int i = 0; i <  numPages(); i++) {
+    			HeapPage pg = (HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), i), Permissions.READ_ONLY);
+    			if (pg.getNumEmptySlots() == 0)
+    				continue;
+    			
+    			pg.insertTuple(t);
+    			
+    			return new ArrayList<Page>() {{add(pg);}};
+    		}
+    		
+    		
+    		// no enough space, need allocate a new page
+    		HeapPage pg =  (HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), numPages()), Permissions.READ_ONLY);
+    		pg.insertTuple(t);
+    		// the page still reside on memory ,the number of pages will
+    		// increment when bufferpool flush the memory ?
+    		newpage++;
+    		
+    		return new ArrayList<Page>() {{add(pg);}};
     }
 
     // see DbFile.java for javadocs
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
-        // some code goes here
-        return null;
-        // not necessary for lab1
+        for (int i = 0; i < numPages(); i++) {
+        	HeapPage pg = (HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(getId(), i), Permissions.READ_ONLY);
+        	Iterator<Tuple> itr = pg.iterator();
+        	while (itr.hasNext())
+        		if (itr.next().equals(t))
+        		{
+        			pg.deleteTuple(t);
+
+        			return new ArrayList<Page>() {{add(pg);}};
+        		}
+        }
+        
+        throw new DbException("tuple t is not a member of this DbFile");
     }
 
     // see DbFile.java for javadocs
@@ -152,6 +180,7 @@ public class HeapFile implements DbFile {
 			curPage = (HeapPage) Database.getBufferPool().getPage(tid, 
 					new HeapPageId(getId(), 0), Permissions.READ_ONLY);
 			itr = curPage.iterator();
+			pgNo = curPage.getId().getPageNumber();
 			
 			
 			

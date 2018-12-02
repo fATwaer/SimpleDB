@@ -1,7 +1,7 @@
 package simpledb;
 
 import java.io.*;
-
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -165,8 +165,23 @@ public class BufferPool {
      */
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
+    	//write lock
+    	HeapFile file = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
+    	ArrayList<Page> pagelist = file.insertTuple(tid, t);
+
+    	int begin;
+    	for (begin = 0; begin < pages.length; begin++) {
+    		if (pages[begin] != null && pages[begin].equals(pagelist.get(0)))
+    			return;
+    		if (pages[begin] == null)
+    			break;
+    	}
+    	
+    	for (Page pg : pagelist) {
+    		pages[begin++] = pg;
+    	}
+    	
+    	// operate pages
     }
 
     /**
@@ -184,8 +199,21 @@ public class BufferPool {
      */
     public  void deleteTuple(TransactionId tid, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
+    	// write lock
+    	for (int i = 0; i < pages.length; i++) {
+    		if (pages[i] == null)
+    			continue;
+    		if (pages[i].getId().equals(t.getRecordId().getPageId()))
+    		{
+    			((HeapPage)pages[i]).deleteTuple(t);
+    			return;
+    		}
+    	}
+    	
+    	HeapPage p = (HeapPage) getPage(tid, t.getRecordId().getPageId(), Permissions.READ_ONLY);
+    	p.deleteTuple(t);
+    	p.markDirty(true, tid);
+    	// operate pages
     }
 
     /**
