@@ -179,6 +179,7 @@ public class BufferPool {
     	
     	for (Page pg : pagelist) {
     		pages[begin++] = pg;
+    		pg.markDirty(true, tid);
     	}
     	
     	// operate pages
