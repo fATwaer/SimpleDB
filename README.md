@@ -14,10 +14,17 @@ Lab Submission
 Instructions for labs (including how to submit answers) are [here](https://github.com/MIT-DB-Class/course-info-2018)
 
 
+
+
 Output Test
 ---
+	
+	java -jar dist/simpledb.jar parser catalog.txt
+
+to run the database.
 
 ``` bash
+
 SimpleDB> select * from data d;
 Started a new transaction tid = 2
 Added scan of table d
