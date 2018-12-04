@@ -2,6 +2,7 @@ package simpledb;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -76,7 +77,10 @@ public class BufferPool {
     		if (pages[i] == null)
     			continue;
     		if (pages[i].getId().equals(pid))
+    		{
+    			updateLRU(i);
     			return pages[i];
+    		}
     	}
     	
     	if (perm == Permissions.READ_ONLY) {
@@ -88,8 +92,17 @@ public class BufferPool {
 				if (pages[i] != null)
 					continue;
 				pages[i] = newPage;
+				ll.add(i);
+				
 				return pages[i];
 			}
+			
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 		evictPage();
+			ll.addLast(evicted);
+			
+			pages[evicted] = newPage;
+			return pages[evicted];
+    	
     	} else if (perm == Permissions.READ_WRITE) {
     		// TODO
     	}
@@ -237,8 +250,16 @@ public class BufferPool {
         are removed from the cache so they can be reused safely
     */
     public synchronized void discardPage(PageId pid) {
-        // some code goes here
-        // not necessary for lab1
+        for (int i = 0; i < pageSize; i++) {
+        	if (pages[i] == null)
+        		continue;
+        	if (pages[i].getId().equals(pid))
+        	{
+        		pages[i] = null;
+        		return;
+        	}
+        }
+        		
     }
 
     /**
@@ -246,8 +267,20 @@ public class BufferPool {
      * @param pid an ID indicating the page to flush
      */
     private synchronized  void flushPage(PageId pid) throws IOException {
-        // some code goes here
-        // not necessary for lab1
+    	for (int i = 0; i < pageSize; i++) {
+        	if (pages[i] == null)
+        		continue;
+        	if (pages[i].getId().equals(pid))
+        	{
+        		if (pages[i].isDirty() != null)
+        		{
+        			DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            		file.writePage(pages[i]);
+        		}
+        		pages[i] = null;
+        		return;
+        	}
+        }
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -261,9 +294,29 @@ public class BufferPool {
      * Discards a page from the buffer pool.
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
+    LinkedList<Integer> ll = new  LinkedList<Integer>();
+    int evicted;
     private synchronized  void evictPage() throws DbException {
-        // some code goes here
-        // not necessary for lab1
+        evicted = ll.getFirst();
+        try {
+			flushPage(pages[evicted].getId());
+		} catch (IOException e) {
+			throw new DbException("flush error");
+		}
+        ll.remove(0);
     }
 
+    private synchronized void updateLRU(int i) {
+    	System.out.println(i);
+		if (ll.size() == pageSize)
+		{
+			System.out.println(i);
+			for (int index : ll)
+				if (index == i) {
+					ll.remove(index);
+					ll.addLast(index);
+					break;
+				}
+		}
+    }
 }
