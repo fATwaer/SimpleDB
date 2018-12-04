@@ -13,3 +13,31 @@ Lab Submission
 
 Instructions for labs (including how to submit answers) are [here](https://github.com/MIT-DB-Class/course-info-2018)
 
+
+Output Test
+---
+
+``` bash
+SimpleDB> select * from data d;
+Started a new transaction tid = 2
+Added scan of table d
+Added select list field null.*
+The query plan is:
+  π(d.f1,d.f2),card:0
+  |
+scan(data d)
+
+d.f1	d.f2	
+------------------
+0
+1 10 
+2 20 
+3 30 
+4 40 
+5 50 
+6 60 
+5 50 
+
+ 7 rows.
+Transaction 2 committed.
+```

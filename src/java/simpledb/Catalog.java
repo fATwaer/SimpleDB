@@ -166,10 +166,30 @@ public class Catalog {
     }
 
     public Iterator<Integer> tableIdIterator() {
-        // some code goes here
-        return null;
+        
+        return new Itr();
     }
 
+    public class Itr implements Iterator<Integer> {
+
+    	int cur;
+    	public Itr() {
+    		cur = 0;
+    	}
+		
+		public boolean hasNext() {
+			if (cur >= tables.size())
+				return false;
+			return true;
+		}
+
+		@Override
+		public Integer next() {
+			return tables.get(cur++).tableid;
+		}
+    	
+    }
+    
     public String getTableName(int id) {
     	for (Tables t: tables)
         	if (t.tableid == id)
